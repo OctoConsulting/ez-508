@@ -1,0 +1,37 @@
+{
+  "name": "ez-508",
+  "version": "0.1",
+  "manifest_version": 3,
+  "description": "Lightweight accessibility scanner made for 2023 Hackathon",
+  "options_page": "onboarding.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "ez-508",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "32": "images/octo32.png"
+    }
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "axe.min.js",
+        "script.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "permissions": [
+    "scripting",
+    "tabs",
+    "activeTab",
+    "downloads"
+  ]
+}
