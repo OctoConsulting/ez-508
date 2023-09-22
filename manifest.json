@@ -17,11 +17,15 @@
   "host_permissions": [
     "<all_urls>"
   ],
-  "web_accessible_resources": [
+  "content_scripts": [
     {
-      "resources": [
+      "js": [
         "axe.min.js",
+        "showdown.min.js",
         "script.js"
+      ],
+      "css": [
+        "highlights.css"
       ],
       "matches": [
         "<all_urls>"
@@ -32,6 +36,15 @@
     "scripting",
     "tabs",
     "activeTab",
-    "downloads"
+    "downloads",
+    "storage"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [ "fonts/*", "css/*" ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
   ]
 }

@@ -1,148 +1,108 @@
 //popup.js
 const scanBtn = document.getElementById("scan");
 const aboutBtn = document.getElementById("about");
-const currentTabRadioBtn = document.getElementById("currentTab");
-const popupRadioBtn = document.getElementById("popup");
 let [currentTab] = await chrome.tabs.query({
   active: true,
   currentWindow: true,
 });
 
-//AWS Lambda helper/middleware function to send inquiry to OpenAI API and relay response, keeping API key secure
-//TODO: implement some kind of auth only allowing requests from this extension
-const helpApi =
-  "https://7j1yq207qb.execute-api.us-east-2.amazonaws.com/default/ez508-gpt-responder";
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  currentTab = activeInfo
+});
+
+// load preferences from chrome.storage
+chrome.storage.sync.get(["auto-scan", "highlight", "selectedStandards"]).then((result) => {
+  console.log(result)
+  document.getElementById("auto-scan").checked = result["auto-scan"] ? true : false
+  document.getElementById("highlight").checked = result["highlight"] ? true : false
+  if (result["selectedStandards"]) {
+    document.querySelectorAll('input[name="standard"]').forEach((ele) => {
+      if (result["selectedStandards"].includes(ele.value)) {
+        ele.checked = true
+      } else {
+        ele.checked = false
+      }
+    })
+  }
+});
+
 let selectedStandards;
 let scanTarget;
 
 aboutBtn.addEventListener("click", openOnboarding);
 
+document.getElementById("auto-scan").addEventListener("click", () => {
+  chrome.storage.sync.set({ "auto-scan": document.getElementById("auto-scan").checked }).then(() => {
+    console.log("Updated auto-scan preference to " + document.getElementById("auto-scan").checked);
+  });
+})
+
+document.getElementById("highlight").addEventListener("click", () => {
+  chrome.storage.sync.set({ "highlight": document.getElementById("highlight").checked }).then(() => {
+    console.log("Updated highlight preference to " + document.getElementById("highlight").checked);
+  });
+})
+
 function openOnboarding() {
   chrome.runtime.openOptionsPage();
 }
 
-if (currentTab.url.includes("chrome://")) {
-  currentTabRadioBtn.disabled = true;
-} else {
-  currentTabRadioBtn.disabled = false;
-}
-
 //onMessage listener - picks up results from scan of current tab and displays them in popup.html
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // console.log(message);
-  if (message.action === "displayResults") {
-    // console.log("displayResults message received");
-    // console.log(message.results);
-    displayResults(message.results);
+  if (message.action == "axeResultsCurrentTab") {
+    if (document.getElementById("toggle-results-div")?.innerText == "Hide Results") {
+      // don't interrupt user viewing results
+    } else {
+      displayResults(message.data);
+    }
   }
 });
 
-//listener on currentTabRadioBtn to inject inject.js into current tab when chosen
-//TODO: make this stop triggering axe scan if clicked a second time? due to how inject.js is set up
-// if button is disabled that kind of helps but if user clicks popup radio button then clicks current tab
-// radio button again, it will trigger axe scan without clicking scan button
-currentTabRadioBtn.addEventListener("click", () => {
-  // console.log("current tab radio button clicked");
 
-  // Inject the inject.js script into the active tab
-  chrome.runtime.sendMessage({ action: "injectAxe", tabId: currentTab.id });
-  // console.log("injectAxe message sent");
-});
+document.getElementById("standardsSelectArea").addEventListener("click", () => {
+  let selectedStandards = Array.from(
+    document.querySelectorAll('input[name="standard"]:checked')
+  ).map((checkbox) => checkbox.value);
 
-//TODO: figure out how to get selectedStandards into script.js so they can be passed to axe.run() when
-//scanning the current tab
-function injectStandards() {}
+  if (selectedStandards.length === 0) {
+    displayError("Please select at least one standard to enable scanning.");
+    return;
+  } else {
+    chrome.storage.sync.set({ "selectedStandards": selectedStandards }).then(() => {
+      console.log("Updated standards preference to " + selectedStandards);
+    });
+  }
+})
 
 //listener on scanBtn to detect standards, then execute the scan based on radio
 //button selection (popup or current tab) when clicked
 scanBtn.addEventListener("click", () => {
-  try {
-    // console.log("scan button clicked");
-
-    // Get the selected standards
-    selectedStandards = Array.from(
-      document.querySelectorAll('input[name="standard"]:checked')
-    ).map((checkbox) => checkbox.value);
-
-    // If no standards are selected, display an error message
-    if (selectedStandards.length === 0) {
-      displayError("Please select at least one standard before scanning.");
-      return;
-    }
-
-    // scan based on radio button selection (popup or current tab)
-    scanTarget = document.querySelector('input[name="target"]:checked').value;
-    if (scanTarget === "popup") {
-      // console.log("scan on extension popup initiated");
-      injectAxeAndExecuteScan();
-    } else if (scanTarget === "currentTab") {
-      // console.log("scan on current tab initiated");
-      // send message to trigger axe scan
-      chrome.runtime.sendMessage({
-        action: "executeAxeScan",
-        tabId: currentTab.id,
-        standards: selectedStandards,
-      });
-      // console.log("executeAxeScan message sent");
-    }
-  } catch (error) {
-    console.error("An error occurred during scanning:", error);
-  }
+  chrome.tabs.sendMessage(currentTab.id, { action: "executeAxeScan", tabId: currentTab.id, standards: selectedStandards });
 });
-
-//WORKING BUT ONLY TARGETS POPUP.HTML
-function injectAxeAndExecuteScan() {
-  // Load the axe-core library
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("axe.min.js");
-  script.onload = function () {
-    //   this.remove();
-    executeAxeScan();
-  };
-  document.body.appendChild(script);
-}
-
-//WORKING BUT ONLY TARGETS POPUP.HTML
-function executeAxeScan() {
-  var axeConfig = {
-    runOnly: {
-      type: "tag",
-      values: selectedStandards,
-    },
-  };
-
-  axe
-    .run(axeConfig)
-    .then((results) => {
-      displayResults(results, selectedStandards);
-    })
-    .catch((error) => {
-      console.error("Accessibility testing error:", error);
-    });
-}
 
 function displayError(message) {
   const resultsDiv = document.getElementById("results");
   resultsDiv.innerHTML = `<p class="error">${message}</p>`;
 }
 
+function toggleResultsDiv() {
+  let curr = document.getElementById("results-list").style.display
+  document.getElementById("results-list").style.display = curr == "none" ? 'unset' : 'none'
+  document.getElementById("toggle-results-div").innerText = curr == "none" ? 'Hide Results' : 'Show Results'
+}
+
 // Interprets the results from axe.run() and displays them in the popup
-function displayResults(results, selectedStandards) {
+function displayResults(results) {
   try {
     // console.log(results);
-    const resultsDiv = document.getElementById("results");
-    resultsDiv.innerHTML = "<h2>Accessibility Scan Results</h2>";
-
-    // Standards Scanned
-    if (selectedStandards) {
-      const standardsDiv = document.createElement("div");
-      standardsDiv.className = "standards";
-      standardsDiv.innerHTML = `<strong>Standards Scanned:</strong> ${selectedStandards.join(
-        ", "
-      )}`;
-      resultsDiv.appendChild(standardsDiv);
-      resultsDiv.appendChild(document.createElement("hr"));
-    }
+    const resultsDivRoot = document.getElementById("results");
+    resultsDivRoot.innerHTML = "<h2>Latest Scan Results</h2>"
+    resultsDivRoot.innerHTML += `<div class="buttons-container" id="results-actions"><button id="toggle-results-div">Show Results</button></div>`
+    document.getElementById("toggle-results-div").addEventListener("click", toggleResultsDiv)
+    const resultsDiv = document.createElement("div");
+    resultsDiv.id = "results-list"
+    resultsDiv.style.display = 'none'
+    resultsDivRoot.appendChild(resultsDiv)
 
     // Violations
     if (results.violations.length > 0) {
@@ -223,81 +183,6 @@ function displayResults(results, selectedStandards) {
         const btnContainer = document.createElement("div");
         btnContainer.id = "buttons-container";
         violationDiv.appendChild(btnContainer);
-
-        // Highlight Button
-        const highlightBtn = document.createElement("button");
-        //this only works on popup.html - figure out how to make it work on active tab? disabling for now
-        if (scanTarget === "currentTab") {
-          highlightBtn.disabled = true;
-          highlightBtn.innerText = "Highlight Element (WIP)";
-        } else {
-          highlightBtn.disabled = false;
-          highlightBtn.innerText = "Highlight Element";
-        }
-        highlightBtn.id = `highlightBtn${results.violations.indexOf(
-          violation
-        )}`;
-        btnContainer.appendChild(highlightBtn);
-
-        highlightBtn.addEventListener("click", function () {
-          let target;
-          if (violation.nodes[0].target[0].includes("input")) {
-            //if target is input, select the parent element instead (border doesn't work on input?)
-            target = document.querySelector(
-              violation.nodes[0].target[0]
-            ).parentElement;
-          } else {
-            target = document.querySelector(violation.nodes[0].target[0]);
-          }
-          target.scrollIntoView();
-          target.style.border = "2px solid red";
-          setTimeout(function () {
-            target.style.border = "none";
-          }, 5000);
-        });
-
-        // Help Button
-        const helpMeBtn = document.createElement("button");
-        helpMeBtn.innerText = "Help Me Fix This";
-        helpMeBtn.id = `helpMeBtn${index}`; // Use the index to identify the button
-        btnContainer.appendChild(helpMeBtn);
-
-        // Help Button Event Listener - Disables button, creates response container below button,
-        // calls help API, and displays response
-        helpMeBtn.addEventListener("click", async function () {
-          try {
-            helpMeBtn.disabled = true;
-            const responseContainer = document.createElement("div");
-            responseContainer.id = "responseContainer";
-            violationDiv.appendChild(responseContainer);
-
-            const responseText = document.createElement("p");
-            responseContainer.appendChild(responseText);
-            responseText.style.textAlign = "center";
-            responseText.style.fontSize = "24px";
-
-            // loading animation
-            function updateLoadingText() {
-              responseText.innerText = "Loading" + ".".repeat(periods);
-              periods = (periods + 1) % 11;
-            }
-            let periods = 1;
-            updateLoadingText(); // Initial update
-            const loadingInterval = setInterval(updateLoadingText, 500);
-
-            const cleanedResponse = await getHelp(violationsString);
-
-            // Stop the loading animation and display the response data
-            clearInterval(loadingInterval);
-            responseText.style.textAlign = "left";
-            responseText.style.fontSize = "12px";
-            responseText.innerText = cleanedResponse;
-
-            // Display the response data in the corresponding container
-          } catch (error) {
-            console.error(error);
-          }
-        });
       });
     } else {
       resultsDiv.innerHTML += "<p>No accessibility issues found.</p>";
@@ -319,10 +204,10 @@ function displayResults(results, selectedStandards) {
       downloadLink.download = `popup_${date}_ez508scan.csv`;
     }
     downloadLink.href = resultsCsv;
-    resultsDiv.appendChild(downloadLink);
+    document.getElementById("results-actions").appendChild(downloadLink);
 
     //scroll results into view after displaying
-    resultsDiv.scrollIntoView();
+    // resultsDiv.scrollIntoView();
   } catch (error) {
     displayError("An error occurred while displaying results:", error);
     console.error("An error occurred while displaying results:", error);
@@ -346,35 +231,4 @@ function createResultsCsv(results) {
   return csvDataUri;
 }
 
-// Send a request to the help API and return the response
-// note: sometimes response ends with "For further assistance..." - either prevent that from being part of the response
-// or figure out a way to enable a conversation vs just a one-time response if that's desired functionality
-async function getHelp(violationsString) {
-  // Construct the JSON payload
-  const payload = {
-    message: `Help me fix this! I'm testing a website for accessibility and I found an issue. Here's the relevant info:
-     ${violationsString} - Do Not Prompt the user for further information or interaction, 
-     this is a single query and response only.`,
-  };
 
-  // Fetch the API response
-  const response = await fetch(helpApi, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.status === 200) {
-    throw new Error("Failed to fetch help data");
-  }
-
-  // Get the response data
-  const responseData = await response.json();
-  const cleanedResponse = responseData.message
-    .replace(/```html/g, "")
-    .replace(/```/g, "");
-
-  return cleanedResponse;
-}

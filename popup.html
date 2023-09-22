@@ -2,119 +2,111 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Lightweight 508</title>
+    <title>ez-508</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
+
   </head>
 
   <body>
     <header>
-      <h1>Lightweight 508</h1>
+      <h1 style="margin-bottom: 0;">ez-508</h1>
+      <p class="subtitle">An intuitive, approachable AI-boosted accessibility tool to catch accessibility issues in any stage of your application.</p>
     </header>
     <main>
-      <h2>Please choose one or more standards</h2>
-      <div>
-        <!-- <label for="disabled_for_testing"> -->
-        <input type="checkbox" name="standard" value="wcag2a" />WCAG 2.0 Level A
-        <!-- </label> -->
-      </div>
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="standard"
-            value="wcag2aa"
-            checked="true"
-          />WCAG 2.0 Level AA
-        </label>
-      </div>
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="wcag2aaa" />WCAG 2.0
-          Level AAA
-        </label>
-      </div>
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="wcag21a" />WCAG 2.1
-          Level A
-        </label>
-      </div>
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="wcag21aa" />WCAG 2.1
-          Level AA
-        </label>
-      </div>
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="wcag22aa" /><a
-            href="https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/"
-            target="_blank"
-            >WCAG 2.2 Level AA</a
-          >
-        </label>
-      </div>
-      <br />
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="best-practice" />Best
-          Practice
-        </label>
-      </div>
-      <div>
-        <label>
-          <input type="checkbox" name="standard" value="section508" />Section
-          508
-        </label>
-      </div>
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="standard"
-            value="experimental"
-          />Experimental
-        </label>
-      </div>
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="standard"
-            value="TTv5"
-            checked="true"
-          /><a href="https://www.dhs.gov/trusted-tester" target="_blank"
-            >Trusted Tester v5</a
-          >
-        </label>
-      </div>
-      <br />
-      <h2>Please choose target to scan</h2>
-      <div>
-        <label>
-          <input
-            type="radio"
-            name="target"
-            value="popup"
-            id="popup"
-            checked
-          />This Popup
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="target"
-            value="currentTab"
-            id="currentTab"
-          />Current Tab
-        </label>
-      </div>
-      <br />
-      <div id="buttons-container">
-        <button type="button" id="scan">Scan</button>
+      <div class="buttons-container">
+        <button type="button" id="scan">Scan Now</button>
         <button type="button" id="about">About</button>
       </div>
-      <div id="results"></div>
+      <div id="results">
+        <h2>Latest Scan Results</h2>
+        <span>Click <strong>Scan</strong> or enable auto-scan to view results.</span>
+      </div>
+      <h2>Preferences</h2>
+      <div>
+        <input type="checkbox" name="auto-scan" id="auto-scan"/>Enable auto-scan on DOM change
+      </div>
+      <div>
+        <input type="checkbox" name="highlight" id="highlight"/>Enable highlighting
+      </div>
+      <h2>Accessibility Standards</h2>
+      <div id="standardsSelectArea">
+        <div>
+          <!-- <label for="disabled_for_testing"> -->
+          <input type="checkbox" name="standard" value="wcag2a" />WCAG 2.0 Level A
+          <!-- </label> -->
+        </div>
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              name="standard"
+              value="wcag2aa"
+              checked="true"
+            />WCAG 2.0 Level AA
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="wcag2aaa" />WCAG 2.0
+            Level AAA
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="wcag21a" />WCAG 2.1
+            Level A
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="wcag21aa" />WCAG 2.1
+            Level AA
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="wcag22aa" /><a
+              href="https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/"
+              target="_blank"
+              >WCAG 2.2 Level AA</a
+            >
+          </label>
+        </div>
+        <br />
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="best-practice" />Best
+            Practice
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" name="standard" value="section508" />Section
+            508
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              name="standard"
+              value="experimental"
+            />Experimental
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              name="standard"
+              value="TTv5"
+              checked="true"
+            /><a href="https://www.dhs.gov/trusted-tester" target="_blank"
+              >Trusted Tester v5</a
+            >
+          </label>
+        </div>
+      </div>
     </main>
     <script type="module" src="popup.js"></script>
   </body>

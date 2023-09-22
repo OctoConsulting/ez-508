@@ -1,0 +1,20 @@
+.ez-508 {
+    border: 5px solid!important;
+    border-radius: 3px!important;
+    border-style: dashed!important;
+}
+.ez-508-minor {
+    border-color: #2d92f3!important;
+}
+
+.ez-508-moderate {
+    border-color: #ffeb3b!important;
+}
+
+.ez-508-serious {
+    border-color: #CA2601!important;
+}
+
+.ez-508-critical {
+    border-color: #862b90!important;
+}

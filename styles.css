@@ -1,8 +1,15 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #f5f5f5;
-  min-width: 400px;
+  max-width: 450px;
+  min-width: 450px;
+  width: 450px;
+  padding: 0.5rem;
+  overflow-y: scroll;
+  bottom: 5px;
+  right: 5px;
+  background: #f8f8f8;
+  color: #4d5c64;
 }
 
 .violation {
@@ -33,20 +40,21 @@ input[type="radio"] {
   margin-right: 5px;
 }
 
-button {
+button, #downloadLink {
   flex: 1;
   font-size: 16px;
   margin: 5px;
-  padding: 1rem 2rem; /* Add padding to increase touch target size */
+  padding: 1rem 1.3rem;
   width: 100%;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   background-color: #343541;
   color: #fff;
+  text-decoration: none;
 }
 
-button:hover {
+button:hover, #downloadLink:hover {
   box-shadow: 0 0 0.5rem #545567;
 }
 
@@ -62,14 +70,26 @@ button:disabled {
   text-align: center;
 }
 
-#buttons-container {
+.buttons-container {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
+  text-align: center;
 }
 
-#downloadLink {
+
+
+#toggle-results-div {
+  width: 80%;
+  margin: auto;
   display: block;
+}
+
+.subtitle {
+  border: 1px solid;
+  padding: 0.45rem;
+  background: lightblue;
+  font-size: 13.2px;
   text-align: center;
-  font-size: 24px;
+  border-radius: 3px;
 }
