@@ -66,12 +66,15 @@ async function runAxe() {
           target.classList.add(`ez-508`)
           target.classList.add(`ez-508-${violation.impact}`)
           target.addEventListener("mouseenter", () => {
-            showHelperWidget(violation)
+            let stillHighlighted = elementsWithHighlight.filter(x => x.element.outerHTML == target.outerHTML)?.length > 0
+            if (stillHighlighted) {
+              showHelperWidget(violation)
+            }
           })
           elementsWithHighlight.push({ element: target, class: `ez-508-${violation.impact}` })
         }
     })
-  } else { // remove highlights
+  } else { // remove highlights + event listener
     elementsWithHighlight.forEach((entry) => {
       entry?.element?.classList.remove(`ez-508`)
       entry?.element?.classList.remove(entry.class)
