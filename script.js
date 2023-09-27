@@ -1,9 +1,11 @@
 //script.js
 // Listen for messages from background or popup
+let global = this
 let selectedStandards = ["wcag2aa", "TTv5"] // default, will be fetched from extension before run
 let highlightEnabled = false
 let autoScan = false
 let elementsWithHighlight = []
+let results = null
 
 const converter = new showdown.Converter()
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -18,10 +20,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }
 });
 
-chrome.storage.onChanged.addListener(async () => {
-  highlightEnabled = (await chrome.storage.sync.get(["highlight"]))['highlight']
-  autoScan = (await chrome.storage.sync.get(["auto-scan"]))['auto-scan']
-  runAxe()
+chrome.storage.onChanged.addListener(async (changes) => {
+  if (!Object.keys(changes).includes("selectedStandards")) {
+    highlightEnabled = (await chrome.storage.sync.get(["highlight"]))['highlight']
+    autoScan = (await chrome.storage.sync.get(["auto-scan"]))['auto-scan']
+    runAxe()
+  }
 });
 
 async function runAxe() {
@@ -39,18 +43,18 @@ async function runAxe() {
     },
   };
 
-  let results = await axe.run(axeConfig)
-  console.log(`Found ${results.violations.length} violation(s)`);
-  console.log(results.violations);
+  global.results = await axe.run(axeConfig)
+  console.log(`Found ${global.results.violations.length} violation(s)`);
+  console.log(global.results.violations);
   //using CustomEvent because Chrome API is inaccessbile from here
   // const customEvent = new CustomEvent("customAxeResults", {
   //   detail: results,
   // });
   // document.dispatchEvent(customEvent);
-  chrome.runtime.sendMessage({ action: "axeResultsCurrentTab", data: results });
+  chrome.runtime.sendMessage({ action: "axeResultsCurrentTab", data: global.results });
 
   if (highlightEnabled) {
-    results.violations.forEach((violation, index) => {
+    global.results.violations.forEach((violation, index) => {
       let target;
         if (violation.nodes[0].target[0].includes("input")) {
           //if target is input, select the parent element instead (border doesn't work on input?)
@@ -68,7 +72,7 @@ async function runAxe() {
           target.addEventListener("mouseenter", () => {
             let stillHighlighted = elementsWithHighlight.filter(x => x.element.outerHTML == target.outerHTML)?.length > 0
             if (stillHighlighted) {
-              showHelperWidget(violation)
+              showHelperWidget(violation, index)
             }
           })
           elementsWithHighlight.push({ element: target, class: `ez-508-${violation.impact}` })
@@ -84,7 +88,24 @@ async function runAxe() {
 }
 
 
-function showHelperWidget(violation) {
+function showHelperWidget(violation, index, focus=false) {
+  // blinking effect
+  if (focus) {
+    let element = document.querySelector(violation.nodes[0].target[0])
+    element.classList.add(`ez-508-focus`)
+    let interval = setInterval(() => { 
+      if (element.classList.contains("ez-508-focus")) {
+        element.classList.remove(`ez-508-focus`)
+      } else {
+        element.classList.add(`ez-508-focus`)
+      }
+    }, 250)
+    setTimeout(() => {
+      clearInterval(interval)
+      element.classList.remove(`ez-508-focus`)
+    }, 2000)
+  }
+
   helperWidget.style.display = 'unset'
   helperWidget.innerHTML = "<h3>ez-508 Accessibility Insight</h3><h4>Violation Details</h4>"
   const violationDiv = document.createElement("div");
@@ -97,7 +118,7 @@ function showHelperWidget(violation) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
-  helperWidget.innerHTML += `<a id="ez-508-close">[close]</a><p><strong>The Problem</strong>: ${escapedHelp}.</p>`;
+  helperWidget.innerHTML += `<div id="ez-508-nav">[${ index + 1 } / ${ global.results.violations.length }] [<a id="ez-508-prev" ${ index - 1 < 0 ? 'class="ez-disabled"' : "" } data-index="${ index - 1 }">prev</a> / <a id="ez-508-next" ${ index + 1 >= global.results.violations.length ? 'class="ez-disabled"' : "" } data-index="${ index + 1 }">next</a>]</div><a id="ez-508-close">[close]</a><p><strong>The Problem</strong>: ${escapedHelp}.</p>`;
   helperWidget.innerHTML += `<p><strong>The Rule</strong>: ${escapedDescription} (<em>${violation.id}</em>).</p>`;
   helperWidget.innerHTML +=  `<p><strong>The Impact:</strong> This is a <span class="ez-508-helper-${violation.impact}"><strong>${violation.impact}</strong></span> accessibility item.</p>`;
 
@@ -207,8 +228,8 @@ helperWidget.style.display = 'none'
 document.addEventListener('click', async function (ev) {
   const target = ev.composedPath()[0]; // Get the actual target element
 
+  ev.preventDefault()
   if (target.id == "ez-508-helper-ai") {
-    ev.preventDefault()
     target.innerText = "..."
     
     // loading animation
@@ -225,5 +246,8 @@ document.addEventListener('click', async function (ev) {
   } else if (target.id == "ez-508-close") {
     ev.preventDefault()
     document.getElementById("ez-508-shadow-root").shadowRoot.getElementById("ez-508-helper-widget").style.display = 'none'
+  } else if ((target.id == "ez-508-prev" || target.id == "ez-508-next") && !target.classList.contains("ez-disabled")) {
+    let nextIndex = parseInt(target.getAttribute("data-index"))
+    showHelperWidget(global.results.violations[nextIndex], nextIndex, true)
   }
 });
