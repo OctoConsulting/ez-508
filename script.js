@@ -234,7 +234,7 @@ document.addEventListener('click', async function (ev) {
     
     // loading animation
     function updateLoadingText() {
-      target.innerText = ".".repeat(periods);
+      target.innerHTML = ".".repeat(periods) + "&nbsp;";
       periods = (periods + 1) % 11;
     }
     let periods = 1;
