@@ -228,8 +228,8 @@ helperWidget.style.display = 'none'
 document.addEventListener('click', async function (ev) {
   const target = ev.composedPath()[0]; // Get the actual target element
 
-  ev.preventDefault()
   if (target.id == "ez-508-helper-ai") {
+    ev.preventDefault()
     target.innerText = "..."
     
     // loading animation
@@ -247,6 +247,7 @@ document.addEventListener('click', async function (ev) {
     ev.preventDefault()
     document.getElementById("ez-508-shadow-root").shadowRoot.getElementById("ez-508-helper-widget").style.display = 'none'
   } else if ((target.id == "ez-508-prev" || target.id == "ez-508-next") && !target.classList.contains("ez-disabled")) {
+    ev.preventDefault()
     let nextIndex = parseInt(target.getAttribute("data-index"))
     showHelperWidget(global.results.violations[nextIndex], nextIndex, true)
   }
