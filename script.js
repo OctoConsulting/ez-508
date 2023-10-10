@@ -250,5 +250,6 @@ document.addEventListener('click', async function (ev) {
     ev.preventDefault()
     let nextIndex = parseInt(target.getAttribute("data-index"))
     showHelperWidget(global.results.violations[nextIndex], nextIndex, true)
+    document.querySelector(global?.results?.violations[nextIndex]?.nodes[0]?.target[0])?.scrollIntoView({ behavior: "smooth" })
   }
 });
