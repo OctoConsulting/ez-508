@@ -196,13 +196,9 @@ function displayResults(results) {
     downloadLink.text = "Download Results (.csv)";
     downloadLink.id = "downloadLink";
     const date = new Date().toISOString().slice(0, 10);
-    if (scanTarget === "currentTab") {
-      const activeTabURL = new URL(currentTab.url);
-      const scanURL = activeTabURL.hostname + activeTabURL.pathname;
-      downloadLink.download = `${scanURL}_${date}_ez508scan.csv`;
-    } else {
-      downloadLink.download = `popup_${date}_ez508scan.csv`;
-    }
+    const activeTabURL = new URL(currentTab.url);
+    const scanURL = activeTabURL.hostname + activeTabURL.pathname;
+    downloadLink.download = `${scanURL}_${date}_ez508scan.csv`;
     downloadLink.href = resultsCsv;
     document.getElementById("results-actions").appendChild(downloadLink);
 
